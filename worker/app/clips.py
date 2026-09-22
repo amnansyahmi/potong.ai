@@ -70,6 +70,16 @@ def _local_score(text: str, duration: float, min_duration: int, max_duration: in
     if text.endswith((".", "?", "!")):
         score += 4
 
+    opening = " ".join(words[:7]).lower()
+    if any(opening.startswith(term) for term in ["dan ", "tapi ", "so ", "then ", "because ", "sebab "]):
+        score -= 8
+
+    filler_count = len(re.findall(r"\b(?:erm+|uh+|hmm+|aa+|okay so|macam tu)\b", lower))
+    score -= min(12, filler_count * 3)
+
+    if any(char.isdigit() for char in text):
+        score += 3
+
     return max(1, min(100, score))
 
 
@@ -140,6 +150,7 @@ def _fallback_result(candidate: dict[str, Any]) -> dict[str, Any]:
         "title": _first_title(text),
         "hook": first_sentence[:220] or text[:220],
         "reason": "Bahagian ini cukup lengkap untuk berdiri sendiri dan mempunyai aliran dialog yang padat.",
+        "social_caption": f"{_first_title(text)}\n\n#potongai #videotips",
     }
 
 
@@ -193,6 +204,7 @@ def _ai_rerank(candidates: list[dict[str, Any]], clip_count: int, language: str)
                 "title": "short specific title",
                 "hook": "one sentence from or faithful to the clip",
                 "reason": "short explanation",
+                "social_caption": "a faithful post caption with up to 3 relevant hashtags",
             }
         ],
         "candidates": compact,
@@ -238,6 +250,9 @@ def _ai_rerank(candidates: list[dict[str, Any]], clip_count: int, language: str)
                     "title": _clean(str(item.get("title") or _first_title(candidate["text"])))[:90],
                     "hook": _clean(str(item.get("hook") or candidate["text"][:220]))[:240],
                     "reason": _clean(str(item.get("reason") or "Dipilih berdasarkan aliran dan konteks."))[:260],
+                    "social_caption": _clean(
+                        str(item.get("social_caption") or f"{_first_title(candidate['text'])} #potongai")
+                    )[:500],
                 }
             )
 

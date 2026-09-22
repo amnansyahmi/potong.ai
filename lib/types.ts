@@ -9,7 +9,9 @@ export interface ClipResult {
   duration: number;
   score: number;
   reason: string;
+  social_caption: string;
   url: string;
+  subtitle_url: string;
 }
 
 export interface JobResult {
@@ -18,6 +20,19 @@ export interface JobResult {
   progress: number;
   stage: string;
   filename: string;
+  source_type: "youtube" | "upload";
+  platform: "tiktok" | "reels" | "shorts";
+  transcript_url?: string | null;
+  bundle_url?: string | null;
   error?: string | null;
   clips: ClipResult[];
+}
+
+export interface SourceInfo {
+  url: string;
+  title: string;
+  channel: string;
+  thumbnail: string;
+  duration: number;
+  webpage_url: string;
 }

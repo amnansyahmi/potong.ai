@@ -173,6 +173,112 @@ h1 {
   line-height: 1.55;
 }
 
+.sourceTabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--ink);
+  border-bottom: 0;
+}
+
+.sourceTabs button {
+  min-height: 48px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.sourceTabs button + button {
+  border-left: 1px solid var(--ink);
+}
+
+.sourceTabs button.isActive {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.sourceTabs button:disabled {
+  cursor: not-allowed;
+}
+
+.youtubeSource {
+  min-height: 250px;
+  border: 1.5px solid var(--ink);
+  padding: clamp(28px, 5vw, 50px);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.youtubeSource > label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.urlRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.urlRow input {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  background: var(--white);
+  color: var(--ink);
+  padding: 0 15px;
+}
+
+.urlRow .secondaryButton {
+  min-width: 132px;
+}
+
+.urlRow .secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.sourceHint {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.sourcePreview {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.sourcePreview img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: block;
+  object-fit: cover;
+  background: var(--paper-deep);
+}
+
+.sourcePreview h2 {
+  margin-bottom: 6px;
+  font-size: clamp(20px, 2.4vw, 28px);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.sourcePreview p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .dropzone {
   border: 1.5px solid var(--ink);
   min-height: 250px;
@@ -390,6 +496,75 @@ h1 {
   font-weight: 750;
 }
 
+.recentJobs {
+  margin-top: 28px;
+  border-top: 1px solid var(--ink);
+  padding-top: 18px;
+}
+
+.recentHeading {
+  margin-bottom: 10px;
+}
+
+.recentHeading h2 {
+  margin-bottom: 2px;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.recentHeading span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.recentJobs ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recentJobs li {
+  border-top: 1px solid var(--line);
+}
+
+.recentJobs button {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 0;
+  padding: 8px 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.recentJobs button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.recentJobs button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.recentJobs button small {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+}
+
+.mobileRecent {
+  display: none;
+}
+
 .mobileControls {
   display: none;
 }
@@ -414,6 +589,14 @@ h1 {
   line-height: 1.05;
 }
 
+.jobSource {
+  max-width: 680px;
+  margin: 9px 0 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
 .progressNumber {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 17px;
@@ -433,6 +616,41 @@ h1 {
   transition: width 280ms ease;
 }
 
+.pipelineSteps {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin: 11px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+}
+
+.pipelineSteps li {
+  position: relative;
+  padding-top: 11px;
+}
+
+.pipelineSteps li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 2px;
+  background: var(--line);
+}
+
+.pipelineSteps li.isDone {
+  color: var(--ink);
+}
+
+.pipelineSteps li.isDone::before {
+  background: var(--cut);
+}
+
 .resultIntro {
   min-height: 78px;
   border-bottom: 1px solid var(--ink);
@@ -445,6 +663,20 @@ h1 {
 .resultIntro p {
   margin: 0;
   color: var(--muted);
+}
+
+.resultDownloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.resultDownloads .primaryButton,
+.resultDownloads .secondaryButton {
+  min-height: 44px;
+  font-size: 14px;
 }
 
 .clipList {
@@ -477,6 +709,11 @@ h1 {
   font-size: 12px;
 }
 
+.scoreTag {
+  color: var(--cut);
+  font-weight: 800;
+}
+
 .clipCopy h3 {
   margin-bottom: 10px;
   font-size: clamp(21px, 2.5vw, 28px);
@@ -495,6 +732,31 @@ h1 {
   font-size: 14px;
 }
 
+.captionBox {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 13px;
+}
+
+.captionBox p {
+  margin-bottom: 9px;
+  white-space: pre-line;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.captionBox button {
+  min-height: 44px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--cut);
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
 .clipMedia video {
   width: 100%;
   max-height: 360px;
@@ -505,9 +767,15 @@ h1 {
 
 .downloadButton {
   width: 100%;
-  margin-top: 9px;
   min-height: 44px;
   font-size: 14px;
+}
+
+.downloadGroup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 9px;
 }
 
 .footer {
@@ -557,6 +825,10 @@ h1 {
     display: block;
     margin-top: 28px;
     border-top: 1px solid var(--ink);
+  }
+
+  .mobileRecent {
+    display: block;
   }
 
   .controls {
@@ -611,6 +883,27 @@ h1 {
 
   .lede {
     font-size: 16px;
+  }
+
+  .sourceTabs button {
+    min-height: 50px;
+  }
+
+  .youtubeSource {
+    min-height: 0;
+    padding: 24px 18px;
+  }
+
+  .urlRow {
+    grid-template-columns: 1fr;
+  }
+
+  .urlRow .secondaryButton {
+    width: 100%;
+  }
+
+  .sourcePreview {
+    grid-template-columns: 1fr;
   }
 
   .dropEmpty {
@@ -669,6 +962,11 @@ h1 {
     font-size: 14px;
   }
 
+  .pipelineSteps {
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: 13px;
+  }
+
   .resultIntro {
     align-items: flex-start;
     flex-direction: column;
@@ -689,6 +987,10 @@ h1 {
 
   .clipMedia video {
     max-height: 520px;
+  }
+
+  .downloadGroup {
+    grid-template-columns: 1fr;
   }
 
   .footer {

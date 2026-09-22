@@ -27,6 +27,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === "GET" && req.url?.startsWith("/api/source-info?")) {
+    json(res, 200, {
+      url: "https://youtu.be/demo",
+      title: "Podcast bisnes tanpa jargon",
+      channel: "Studio Demo",
+      thumbnail: "https://i.ytimg.com/vi/demo/hqdefault.jpg",
+      duration: 754,
+      webpage_url: "https://youtu.be/demo",
+    });
+    return;
+  }
+
   if (req.method === "POST" && req.url === "/api/jobs") {
     req.resume();
     req.on("end", () => {
@@ -36,6 +48,10 @@ const server = http.createServer((req, res) => {
         progress: 2,
         stage: "Dalam queue",
         filename: "demo.mp4",
+        source_type: "upload",
+        platform: "tiktok",
+        transcript_url: null,
+        bundle_url: null,
         error: null,
         clips: [],
         polls: 0,
@@ -60,6 +76,8 @@ const server = http.createServer((req, res) => {
         status: "completed",
         progress: 100,
         stage: "Siap",
+        transcript_url: "/outputs/demo1234/transcript.json",
+        bundle_url: "/outputs/demo1234/potong-ai-clips.zip",
         clips: [
           {
             id: "clip-01",
@@ -70,7 +88,9 @@ const server = http.createServer((req, res) => {
             duration: 36,
             score: 88,
             reason: "Bahagian ini cukup lengkap untuk berdiri sendiri.",
+            social_caption: "Ramai silap dekat bahagian ini.\n\n#potongai #videotips",
             url: "/outputs/demo1234/clip-01.mp4",
+            subtitle_url: "/outputs/demo1234/clip-01.srt",
           },
         ],
       });

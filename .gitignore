@@ -6,6 +6,9 @@ out
 .env.*.local
 .DS_Store
 *.log
+test-results
+playwright-report
+*.tsbuildinfo
 worker/.venv
 worker/.env
 worker/data

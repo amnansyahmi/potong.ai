@@ -48,15 +48,38 @@ def _filter_path(path: Path) -> str:
     return value
 
 
-def render_clip(source: Path, destination: Path, subtitle_file: Path, start: float, end: float) -> None:
+CAPTION_STYLES = {
+    "clean": (
+        "FontName=Arial,FontSize=22,PrimaryColour=&H00FFFFFF,"
+        "OutlineColour=&H00000000,BorderStyle=1,Outline=3,Shadow=0,Alignment=2,MarginV=115"
+    ),
+    "bold": (
+        "FontName=Arial,FontSize=26,Bold=1,PrimaryColour=&H0000E7FF,"
+        "OutlineColour=&H00000000,BorderStyle=1,Outline=4,Shadow=0,Alignment=2,MarginV=130"
+    ),
+    "minimal": (
+        "FontName=Arial,FontSize=18,PrimaryColour=&H00FFFFFF,"
+        "OutlineColour=&H00000000,BorderStyle=3,BackColour=&H90000000,Outline=0,Shadow=0,Alignment=2,MarginV=96"
+    ),
+}
+
+
+def render_clip(
+    source: Path,
+    destination: Path,
+    subtitle_file: Path,
+    start: float,
+    end: float,
+    caption_style: str = "clean",
+) -> None:
     duration = max(0.1, end - start)
     subtitle_path = _filter_path(subtitle_file)
+    subtitle_style = CAPTION_STYLES.get(caption_style, CAPTION_STYLES["clean"])
     video_filter = (
         "scale=1080:1920:force_original_aspect_ratio=increase,"
         "crop=1080:1920,"
         f"subtitles='{subtitle_path}':"
-        "force_style='FontName=Arial,FontSize=22,PrimaryColour=&H00FFFFFF,"
-        "OutlineColour=&H00000000,BorderStyle=1,Outline=3,Shadow=0,Alignment=2,MarginV=115'"
+        f"force_style='{subtitle_style}'"
     )
 
     command = [

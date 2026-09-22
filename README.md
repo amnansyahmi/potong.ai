@@ -2,16 +2,23 @@
 
 potong.ai turns a long video into short vertical clips with a free-first local workflow.
 
-## What works in this MVP
+## What works
 
+- Paste a YouTube, YouTube Shorts or youtu.be URL
+- Inspect the title, channel, thumbnail and duration before processing
 - Upload MP4, MOV, WebM or MKV
+- Choose TikTok, Instagram Reels or YouTube Shorts as the target
+- Choose 1–12 clips, duration, audio language and subtitle treatment
 - Transcribe locally with faster-whisper
 - Build candidate moments from the transcript
 - Optionally ask ai-nonymauz-cloud to rerank and title candidates
 - Fall back to local scoring if the AI endpoint is unavailable
 - Render 9:16 MP4 clips with FFmpeg
-- Burn subtitles into each clip
+- Burn clean, bold or minimal subtitles into each clip
 - Preview and download results from the browser
+- Copy a generated social caption for each result
+- Download individual MP4/SRT files, the transcript JSON or one ZIP bundle
+- Reopen recent jobs stored in the same browser
 - Bahasa Melayu Malaysia UI and prompts
 
 ## Architecture
@@ -22,6 +29,7 @@ Next.js web app
       | upload + polling
       v
 FastAPI local worker
+  |- yt-dlp (YouTube URL ingestion)
   |- faster-whisper
   |- ai-nonymauz-cloud (optional)
   |- FFmpeg
@@ -99,10 +107,31 @@ AI_BASE_URL=
 AI_MODEL=auto
 AI_API_KEY=
 CORS_ORIGINS=http://localhost:3000
+MAX_SOURCE_DURATION_SECONDS=14400
 ```
+
+`MAX_SOURCE_DURATION_SECONDS` defaults to four hours. URL ingestion only accepts
+HTTPS links from known YouTube hosts, disables playlists and limits downloads to
+1080p to keep local processing practical.
+
+## Where to paste a YouTube URL
+
+Open the app and keep **URL YouTube** selected. Paste the link into the large URL
+field, choose **Semak video** to verify its metadata, then select the clip settings
+and press **Analisis dan potong clip**.
+
+## Deployment
+
+- Deploy the Next.js app to Vercel with `NEXT_PUBLIC_WORKER_URL` pointing to the worker.
+- Run the worker on a machine or CPU service with persistent storage, FFmpeg and enough
+  RAM for the selected Whisper model.
+- Add every deployed web origin to `CORS_ORIGINS`, separated by commas.
+- Keep `AI_API_KEY` on the worker only. Never expose it as a `NEXT_PUBLIC_*` variable.
 
 ## Current limitation
 
-The first renderer uses a centered 9:16 crop. Face-aware reframing is the next rendering milestone.
+The renderer currently uses a centered 9:16 crop. Face-aware reframing, multi-speaker
+layouts and direct publishing require additional video/social integrations and are
+not presented as completed features.
 
 For a fully hosted public SaaS, the video worker needs a reachable CPU/GPU service. Vercel is suitable for the web app, not long FFmpeg/transcription jobs.
