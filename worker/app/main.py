@@ -19,7 +19,22 @@ from .transcribe import transcribe_video
 load_dotenv()
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = ROOT / "data"
+
+
+def _data_dir() -> Path:
+    configured = os.getenv("POTONG_DATA_DIR", "").strip()
+    if configured:
+        return Path(configured).expanduser()
+
+    # Vercel's deployed application filesystem is read-only. Its writable
+    # scratch space lives under /tmp and is intentionally ephemeral.
+    if os.getenv("VERCEL"):
+        return Path("/tmp/potong-ai")
+
+    return ROOT / "data"
+
+
+DATA_DIR = _data_dir()
 JOBS_DIR = DATA_DIR / "jobs"
 JOBS_DIR.mkdir(parents=True, exist_ok=True)
 

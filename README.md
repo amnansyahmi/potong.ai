@@ -108,6 +108,8 @@ AI_MODEL=auto
 AI_API_KEY=
 CORS_ORIGINS=http://localhost:3000
 MAX_SOURCE_DURATION_SECONDS=14400
+# Optional writable data path. Vercel automatically uses /tmp/potong-ai.
+POTONG_DATA_DIR=
 ```
 
 `MAX_SOURCE_DURATION_SECONDS` defaults to four hours. URL ingestion only accepts
@@ -127,6 +129,11 @@ and press **Analisis dan potong clip**.
   RAM for the selected Whisper model.
 - Add every deployed web origin to `CORS_ORIGINS`, separated by commas.
 - Keep `AI_API_KEY` on the worker only. Never expose it as a `NEXT_PUBLIC_*` variable.
+
+The FastAPI health and metadata routes can run on Vercel. Vercel deployments use
+ephemeral `/tmp` storage, so completed jobs and output files are not persistent
+across function instances. The full transcription/rendering pipeline still needs
+durable object storage and a long-running job runner for reliable public use.
 
 ## Current limitation
 
