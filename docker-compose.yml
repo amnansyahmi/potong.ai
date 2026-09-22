@@ -1,0 +1,10 @@
+services:
+  worker:
+    build:
+      context: ./worker
+    ports:
+      - "8787:8787"
+    env_file:
+      - ./worker/.env
+    volumes:
+      - ./worker/data:/app/data

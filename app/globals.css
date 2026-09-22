@@ -1,0 +1,708 @@
+:root {
+  --paper: #f4f0e8;
+  --paper-deep: #e7e0d4;
+  --ink: #161616;
+  --muted: #666158;
+  --line: #bdb4a7;
+  --cut: #c93419;
+  --white: #ffffff;
+  --success: #287a42;
+  --danger: #a22f20;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+a,
+label[for] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+label[for]:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+a {
+  color: inherit;
+}
+
+.appShell {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 0 clamp(18px, 3vw, 48px);
+}
+
+.topbar {
+  min-height: 82px;
+  border-bottom: 1px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  min-height: 44px;
+  text-decoration: none;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.wordmark .slash {
+  color: var(--cut);
+  font-weight: 400;
+  transform: translateY(-1px);
+}
+
+.workerState {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.workerDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--line);
+  flex: 0 0 auto;
+}
+
+.workerDot.isOnline {
+  background: var(--success);
+}
+
+.workerDot.isOffline {
+  background: var(--danger);
+}
+
+.textButton {
+  min-height: 44px;
+  border: 0;
+  padding: 0 2px;
+  background: transparent;
+  color: var(--cut);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: clamp(32px, 5vw, 76px);
+  align-items: start;
+  padding: clamp(48px, 7vw, 92px) 0 70px;
+}
+
+.workArea {
+  min-width: 0;
+}
+
+.sectionHeading {
+  max-width: 850px;
+  margin-bottom: 36px;
+}
+
+.sectionIndex {
+  margin: 0 0 10px;
+  color: var(--cut);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  max-width: 800px;
+  margin-bottom: 18px;
+  font-size: clamp(38px, 5.7vw, 76px);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+  font-weight: 800;
+}
+
+.lede {
+  max-width: 720px;
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: clamp(16px, 1.5vw, 20px);
+  line-height: 1.55;
+}
+
+.dropzone {
+  border: 1.5px solid var(--ink);
+  min-height: 250px;
+  background: rgba(255, 255, 255, 0.28);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.dropzone.isDragging {
+  border-color: var(--cut);
+  background: rgba(201, 52, 25, 0.08);
+}
+
+.dropzone.hasFile {
+  min-height: 0;
+}
+
+.dropEmpty {
+  min-height: 248px;
+  padding: clamp(30px, 5vw, 56px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.dropTitle {
+  margin-bottom: 7px;
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.dropNote {
+  max-width: 520px;
+  margin-bottom: 24px;
+  color: var(--muted);
+}
+
+.primaryButton,
+.secondaryButton,
+.runButton,
+.downloadButton {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  padding: 0 18px;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primaryButton,
+.runButton {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.primaryButton:hover,
+.runButton:hover:not(:disabled) {
+  background: var(--cut);
+  border-color: var(--cut);
+}
+
+.secondaryButton,
+.downloadButton {
+  background: transparent;
+  color: var(--ink);
+}
+
+.secondaryButton:hover,
+.downloadButton:hover {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.fileButton {
+  min-width: 134px;
+}
+
+.selectedFile {
+  min-height: 146px;
+  padding: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.fileLabel {
+  margin-bottom: 4px;
+  color: var(--cut);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.fileName {
+  max-width: 700px;
+  margin-bottom: 3px;
+  overflow-wrap: anywhere;
+  font-size: 23px;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+
+.fileMeta {
+  margin: 0;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+
+.errorBox {
+  margin-top: 14px;
+  border: 1px solid var(--danger);
+  padding: 14px 16px;
+  display: flex;
+  gap: 8px 14px;
+  align-items: baseline;
+  background: rgba(162, 47, 32, 0.06);
+  color: var(--danger);
+}
+
+.errorBox strong {
+  flex: 0 0 auto;
+}
+
+.runButton {
+  width: 100%;
+  margin-top: 14px;
+  background: var(--cut);
+  border-color: var(--cut);
+  color: var(--white);
+}
+
+.runButton:hover:not(:disabled) {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.runButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.controlRail {
+  position: sticky;
+  top: 28px;
+  border-top: 1px solid var(--ink);
+}
+
+.controls {
+  padding: 22px 0 8px;
+}
+
+.controlsHeading {
+  margin-bottom: 26px;
+}
+
+.controlsHeading h2 {
+  margin-bottom: 3px;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.controlsHeading span,
+.railNote span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 1fr 128px;
+  gap: 14px;
+  align-items: center;
+  min-height: 66px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.field:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink);
+  padding: 0 10px;
+}
+
+.field input:disabled,
+.field select:disabled {
+  opacity: 0.5;
+}
+
+.railNote {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ink);
+}
+
+.railNote p {
+  margin-bottom: 5px;
+  font-weight: 750;
+}
+
+.mobileControls {
+  display: none;
+}
+
+.jobPanel {
+  margin-top: clamp(52px, 7vw, 92px);
+  border-top: 1px solid var(--ink);
+  padding-top: 22px;
+}
+
+.jobHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.jobHeader h2 {
+  margin-bottom: 0;
+  font-size: clamp(28px, 4vw, 46px);
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+
+.progressNumber {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 17px;
+}
+
+.progressTrack {
+  height: 7px;
+  margin-top: 22px;
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  background: var(--cut);
+  transition: width 280ms ease;
+}
+
+.resultIntro {
+  min-height: 78px;
+  border-bottom: 1px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.resultIntro p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.clipList {
+  width: 100%;
+}
+
+.clipRow {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) minmax(220px, 300px);
+  gap: clamp(18px, 3vw, 38px);
+  padding: 28px 0;
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+}
+
+.clipNumber {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--cut);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.clipMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 18px;
+  margin-bottom: 9px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.clipCopy h3 {
+  margin-bottom: 10px;
+  font-size: clamp(21px, 2.5vw, 28px);
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.clipHook {
+  margin-bottom: 8px;
+  font-weight: 650;
+}
+
+.clipReason {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.clipMedia video {
+  width: 100%;
+  max-height: 360px;
+  display: block;
+  background: #000;
+  object-fit: contain;
+}
+
+.downloadButton {
+  width: 100%;
+  margin-top: 9px;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.footer {
+  min-height: 84px;
+  border-top: 1px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.footer a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink);
+  font-weight: 700;
+  text-underline-offset: 4px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 980px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding-top: 54px;
+  }
+
+  .controlRail {
+    display: none;
+  }
+
+  .mobileControls {
+    display: block;
+    margin-top: 28px;
+    border-top: 1px solid var(--ink);
+  }
+
+  .controls {
+    padding-bottom: 0;
+  }
+
+  .controlsHeading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 720px) {
+  .appShell {
+    padding: 0 16px;
+  }
+
+  .topbar {
+    min-height: 72px;
+    align-items: flex-start;
+    padding: 13px 0;
+  }
+
+  .wordmark {
+    font-size: 22px;
+  }
+
+  .workerState {
+    max-width: 180px;
+    min-height: 44px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px 8px;
+    text-align: right;
+    font-size: 12px;
+  }
+
+  .workspace {
+    padding: 38px 0 48px;
+  }
+
+  .sectionHeading {
+    margin-bottom: 26px;
+  }
+
+  h1 {
+    font-size: clamp(38px, 12vw, 54px);
+    line-height: 1;
+  }
+
+  .lede {
+    font-size: 16px;
+  }
+
+  .dropEmpty {
+    min-height: 220px;
+    padding: 26px 20px;
+  }
+
+  .selectedFile {
+    min-height: 0;
+    padding: 22px 18px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .secondaryButton {
+    width: 100%;
+  }
+
+  .fileName {
+    font-size: 20px;
+  }
+
+  .errorBox {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .controlsHeading {
+    display: block;
+  }
+
+  .field {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 12px 0;
+  }
+
+  .field input,
+  .field select {
+    min-height: 48px;
+  }
+
+  .runButton {
+    min-height: 52px;
+  }
+
+  .jobPanel {
+    margin-top: 58px;
+  }
+
+  .jobHeader {
+    gap: 14px;
+  }
+
+  .progressNumber {
+    font-size: 14px;
+  }
+
+  .resultIntro {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+    padding: 14px 0;
+    gap: 2px;
+  }
+
+  .clipRow {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 10px 14px;
+    padding: 25px 0 32px;
+  }
+
+  .clipMedia {
+    grid-column: 2;
+  }
+
+  .clipMedia video {
+    max-height: 520px;
+  }
+
+  .footer {
+    min-height: 72px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
