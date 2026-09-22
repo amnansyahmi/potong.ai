@@ -369,13 +369,14 @@ export function Studio() {
                 ) : (
                   <div className="selectedFile">
                     <div>
-                      <p className="fileLabel">{uploadConfirmed ? "UPLOAD SELESAI" : uploading ? `SEDANG UPLOAD ${Math.round(uploadProgress)}%` : "VIDEO DIPILIH"}</p>
+                      <p className="fileLabel">{uploadConfirmed ? "PILIHAN DISAHKAN · UPLOAD SELESAI" : uploading ? `SEDANG UPLOAD ${Math.round(uploadProgress)}%` : "VIDEO DIPILIH · BELUM DISAHKAN"}</p>
                       <p className="fileName">{file.name}</p>
                       <p className="fileMeta">{formatBytes(file.size)}</p>
+                      {!uploadConfirmed && !uploading && <p className="sourceHint">Tekan “Selesai pilih video” untuk sahkan pilihan dan mula upload.</p>}
                       {uploading && <div className="uploadTrack" aria-label={`Upload ${Math.round(uploadProgress)}%`}><span style={{ width: `${uploadProgress}%` }} /></div>}
                     </div>
                     <div className="fileActions">
-                      {!uploadConfirmed && <button className="primaryButton" type="button" onClick={() => void finishUpload()} disabled={uploading}>{uploading ? "Mengupload…" : "Selesai"}</button>}
+                      {!uploadConfirmed && <button className="primaryButton" type="button" onClick={() => void finishUpload()} disabled={uploading}>{uploading ? "Mengupload…" : "Selesai pilih video"}</button>}
                       {!busy && <button className="secondaryButton" type="button" onClick={() => { setFile(null); setUploadConfirmed(false); setUploadedUrl(null); setUploadProgress(0); setJob(null); if (inputRef.current) inputRef.current.value = ""; }}>Tukar video</button>}
                     </div>
                   </div>

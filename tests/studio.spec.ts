@@ -28,8 +28,9 @@ test("upload controls and completed result work end to end", async ({ page }) =>
     buffer: Buffer.from("demo"),
   });
 
-  await page.getByRole("button", { name: "Selesai" }).click();
-  await expect(page.getByText("UPLOAD SELESAI")).toBeVisible();
+  await expect(page.getByText("VIDEO DIPILIH · BELUM DISAHKAN")).toBeVisible();
+  await page.getByRole("button", { name: "Selesai pilih video" }).click();
+  await expect(page.getByText("PILIHAN DISAHKAN · UPLOAD SELESAI")).toBeVisible();
   await expect(page.getByRole("button", { name: "Analisis dan potong clip" })).toBeEnabled();
 
   await page.getByLabel("Bilangan clip").last().fill("3");
