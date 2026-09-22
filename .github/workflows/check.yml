@@ -20,5 +20,6 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: python -m compileall -q worker/app
+      - run: PYTHONPATH=worker python -m unittest discover -s worker/tests -v
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

@@ -1,3 +1,4 @@
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -64,6 +65,17 @@ CAPTION_STYLES = {
 }
 
 
+def _ffmpeg_binary() -> str:
+    configured = os.getenv("FFMPEG_BINARY", "").strip()
+    if configured:
+        return configured
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return "ffmpeg"
+
+
 def render_clip(
     source: Path,
     destination: Path,
@@ -82,12 +94,25 @@ def render_clip(
         f"force_style='{subtitle_style}'"
     )
 
+    base_command = [
+        _ffmpeg_binary(), "-y", "-ss", f"{start:.3f}", "-i", str(source), "-t", f"{duration:.3f}",
+    ]
+    encoding = [
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+        "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", str(destination),
+    ]
     command = [
-        "ffmpeg", "-y", "-ss", f"{start:.3f}", "-i", str(source), "-t", f"{duration:.3f}",
+        *base_command,
         "-vf", video_filter, "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
         "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", str(destination),
     ]
     completed = subprocess.run(command, capture_output=True, text=True)
     if completed.returncode != 0:
-        message = completed.stderr[-3000:] if completed.stderr else "FFmpeg failed."
-        raise RuntimeError(message)
+        # imageio-ffmpeg builds do not always include libass. Keep the MP4 job
+        # useful by rendering the vertical crop and returning the SRT separately.
+        crop_only = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920"
+        fallback = [*base_command, "-vf", crop_only, *encoding]
+        retry = subprocess.run(fallback, capture_output=True, text=True)
+        if retry.returncode != 0:
+            message = retry.stderr[-3000:] if retry.stderr else "FFmpeg failed."
+            raise RuntimeError(message)

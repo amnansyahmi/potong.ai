@@ -9,10 +9,11 @@ import {
   useRef,
   useState,
 } from "react";
+import { upload } from "@vercel/blob/client";
 import { createJob, getJob, getSourceInfo, workerHealth } from "@/lib/api";
 import type { JobResult, SourceInfo } from "@/lib/types";
 
-const MAX_BROWSER_FILE_BYTES = 8 * 1024 * 1024 * 1024;
+const MAX_BROWSER_FILE_BYTES = 500 * 1024 * 1024;
 const YOUTUBE_HOSTS = new Set(["youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be"]);
 
 function formatTime(seconds: number) {
@@ -53,6 +54,12 @@ export function Studio() {
   const [sourceInfo, setSourceInfo] = useState<SourceInfo | null>(null);
   const [sourceLoading, setSourceLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [hosted, setHosted] = useState(false);
+  const [uploadAccessKey, setUploadAccessKey] = useState("");
+  const [uploadConfirmed, setUploadConfirmed] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [clipCount, setClipCount] = useState(5);
   const [durationPreset, setDurationPreset] = useState("30-60");
@@ -74,6 +81,7 @@ export function Studio() {
   }
 
   useEffect(() => {
+    setHosted(!["localhost", "127.0.0.1"].includes(window.location.hostname));
     void checkWorker();
     try {
       const saved = window.localStorage.getItem("potong-ai-recent-jobs");
@@ -113,13 +121,16 @@ export function Studio() {
     return () => window.clearInterval(timer);
   }, [jobId, jobStatus]);
 
-  const busy = submitting || jobStatus === "queued" || jobStatus === "processing";
-  const sourceReady = sourceMode === "youtube" ? isYouTubeUrl(youtubeUrl) : Boolean(file);
+  const busy = submitting || uploading || jobStatus === "queued" || jobStatus === "processing";
+  const sourceReady = sourceMode === "youtube"
+    ? isYouTubeUrl(youtubeUrl)
+    : Boolean(file && uploadConfirmed);
   const statusLabel = useMemo(() => {
+    if (uploading) return `Upload ${Math.round(uploadProgress)}%`;
     if (submitting) return sourceMode === "youtube" ? "Hantar URL ke worker" : "Upload video";
     if (!job) return "Belum mula";
     return job.stage || job.status;
-  }, [job, sourceMode, submitting]);
+  }, [job, sourceMode, submitting, uploadProgress, uploading]);
 
   function acceptFile(next: File | null) {
     if (!next) return;
@@ -130,13 +141,58 @@ export function Studio() {
     }
 
     if (next.size > MAX_BROWSER_FILE_BYTES) {
-      setError("Fail melebihi 8 GB. Guna fail yang lebih kecil untuk worker ini.");
+      setError("Fail melebihi 500 MB. Had ini memastikan video muat dalam ruang kerja Vercel.");
       return;
     }
 
     setError(null);
     setFile(next);
+    setUploadConfirmed(false);
+    setUploadedUrl(null);
+    setUploadProgress(0);
     setJob(null);
+  }
+
+  async function finishUpload() {
+    if (!file || uploading) return;
+
+    if (!hosted) {
+      setUploadConfirmed(true);
+      setError(null);
+      return;
+    }
+
+    if (!uploadAccessKey.trim()) {
+      setError("Masukkan kod upload dahulu, kemudian tekan Selesai.");
+      return;
+    }
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-120);
+    setUploading(true);
+    setUploadProgress(0);
+    setError(null);
+
+    try {
+      const blob = await upload(`inputs/${Date.now()}-${safeName}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/uploads",
+        clientPayload: JSON.stringify({ accessKey: uploadAccessKey.trim() }),
+        multipart: file.size > 10 * 1024 * 1024,
+        onUploadProgress: ({ percentage }) => setUploadProgress(percentage),
+      });
+      setUploadedUrl(blob.url);
+      setUploadConfirmed(true);
+      setUploadProgress(100);
+    } catch (reason) {
+      setUploadConfirmed(false);
+      setUploadedUrl(null);
+      const message = reason instanceof Error ? reason.message : "Upload gagal.";
+      setError(message.includes("Load failed")
+        ? "Sambungan ke Vercel Blob gagal. Pastikan Blob Storage sudah disambungkan kepada project potong.ai."
+        : message);
+    } finally {
+      setUploading(false);
+    }
   }
 
   function onInput(event: ChangeEvent<HTMLInputElement>) {
@@ -151,6 +207,9 @@ export function Studio() {
 
   function resetWorkspace() {
     setFile(null);
+    setUploadConfirmed(false);
+    setUploadedUrl(null);
+    setUploadProgress(0);
     setYoutubeUrl("");
     setSourceInfo(null);
     setJob(null);
@@ -201,6 +260,9 @@ export function Studio() {
     const body = new FormData();
     if (sourceMode === "youtube") {
       body.append("source_url", youtubeUrl.trim());
+    } else if (uploadedUrl && file) {
+      body.append("upload_url", uploadedUrl);
+      body.append("upload_filename", file.name);
     } else if (file) {
       body.append("file", file);
     }
@@ -245,7 +307,7 @@ export function Studio() {
 
         <div className="workerState" aria-live="polite">
           <span className={"workerDot " + (online === true ? "isOnline" : online === false ? "isOffline" : "")} aria-hidden="true" />
-          <span>{online === null ? "Semak worker" : online ? "Local worker hidup" : "Local worker offline"}</span>
+          <span>{online === null ? "Semak worker" : online ? (hosted ? "Worker online" : "Local worker hidup") : (hosted ? "Worker offline" : "Local worker offline")}</span>
           {online === false && (
             <button className="textButton" type="button" onClick={() => void checkWorker()}>Semak semula</button>
           )}
@@ -296,7 +358,7 @@ export function Studio() {
                     <div>
                       <p className="fileLabel">VIDEO DIJUMPAI</p>
                       <h2>{sourceInfo.title}</h2>
-                      <p>{sourceInfo.channel || "YouTube"} · {formatTime(sourceInfo.duration)}</p>
+                      <p>{sourceInfo.channel || "YouTube"} · {sourceInfo.duration > 0 ? formatTime(sourceInfo.duration) : "durasi disemak semasa proses"}</p>
                     </div>
                   </article>
                 )}
@@ -308,17 +370,27 @@ export function Studio() {
                 {!file ? (
                   <div className="dropEmpty">
                     <p className="dropTitle">Letak video di sini</p>
-                    <p className="dropNote">MP4, MOV, WebM atau MKV. Video kekal pada worker yang anda jalankan.</p>
+                    <p className="dropNote">MP4, MOV, WebM atau MKV sehingga 500 MB. Di Vercel, fail dihantar terus ke Blob supaya tidak terkena had request API.</p>
                     <button className="primaryButton fileButton" type="button" onClick={() => inputRef.current?.click()}>Pilih video</button>
                   </div>
                 ) : (
                   <div className="selectedFile">
                     <div>
-                      <p className="fileLabel">VIDEO DIPILIH</p>
+                      <p className="fileLabel">{uploadConfirmed ? "UPLOAD SELESAI" : uploading ? `SEDANG UPLOAD ${Math.round(uploadProgress)}%` : "VIDEO DIPILIH"}</p>
                       <p className="fileName">{file.name}</p>
                       <p className="fileMeta">{formatBytes(file.size)}</p>
+                      {hosted && !uploadConfirmed && (
+                        <label className="uploadKeyField">
+                          <span>Kod upload</span>
+                          <input type="password" value={uploadAccessKey} disabled={uploading} autoComplete="off" onChange={(event) => setUploadAccessKey(event.target.value)} />
+                        </label>
+                      )}
+                      {uploading && <div className="uploadTrack" aria-label={`Upload ${Math.round(uploadProgress)}%`}><span style={{ width: `${uploadProgress}%` }} /></div>}
                     </div>
-                    {!busy && <button className="secondaryButton" type="button" onClick={() => { setFile(null); setJob(null); if (inputRef.current) inputRef.current.value = ""; }}>Tukar video</button>}
+                    <div className="fileActions">
+                      {!uploadConfirmed && <button className="primaryButton" type="button" onClick={() => void finishUpload()} disabled={uploading}>{uploading ? "Mengupload…" : "Selesai"}</button>}
+                      {!busy && <button className="secondaryButton" type="button" onClick={() => { setFile(null); setUploadConfirmed(false); setUploadedUrl(null); setUploadProgress(0); setJob(null); if (inputRef.current) inputRef.current.value = ""; }}>Tukar video</button>}
+                    </div>
                   </div>
                 )}
               </div>
@@ -343,12 +415,12 @@ export function Studio() {
 
         <aside className="controlRail" aria-label="Tetapan potongan">
           <Controls clipCount={clipCount} setClipCount={setClipCount} durationPreset={durationPreset} setDurationPreset={setDurationPreset} language={language} setLanguage={setLanguage} platform={platform} setPlatform={setPlatform} captionStyle={captionStyle} setCaptionStyle={setCaptionStyle} disabled={busy} />
-          <div className="railNote"><p>RM0 local mode</p><span>Download, transcription dan rendering dibuat pada worker sendiri. AI endpoint kekal optional.</span></div>
+          <div className="railNote"><p>{hosted ? "Vercel hosted mode" : "RM0 local mode"}</p><span>{hosted ? "Upload dan hasil disimpan dalam Vercel Blob. Proses video berjalan pada API worker." : "Download, transcription dan rendering dibuat pada worker sendiri. AI endpoint kekal optional."}</span></div>
           <RecentJobs jobs={recentJobs} currentId={job?.id} disabled={busy} onOpen={openRecentJob} />
         </aside>
       </div>
 
-      <footer className="footer"><span>potong.ai · local clipping desk</span><a href="https://github.com/amnansyahmi/potong.ai" target="_blank" rel="noreferrer">Source</a></footer>
+      <footer className="footer"><span>potong.ai · video clipping desk</span><a href="https://github.com/amnansyahmi/potong.ai" target="_blank" rel="noreferrer">Source</a></footer>
     </main>
   );
 }

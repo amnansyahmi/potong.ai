@@ -1,12 +1,12 @@
 # potong.ai
 
-potong.ai turns a long video into short vertical clips with a free-first local workflow.
+potong.ai turns a long video into short vertical clips. It supports a local workflow and a two-project Vercel deployment with Vercel Blob for durable inputs and results.
 
 ## What works
 
 - Paste a YouTube, YouTube Shorts or youtu.be URL
 - Inspect the title, channel, thumbnail and duration before processing
-- Upload MP4, MOV, WebM or MKV
+- Upload MP4, MOV, WebM or MKV up to 500 MB directly to Vercel Blob
 - Choose TikTok, Instagram Reels or YouTube Shorts as the target
 - Choose 1–12 clips, duration, audio language and subtitle treatment
 - Transcribe locally with faster-whisper
@@ -24,16 +24,14 @@ potong.ai turns a long video into short vertical clips with a free-first local w
 ## Architecture
 
 ```text
-Next.js web app
-      |
-      | upload + polling
-      v
-FastAPI local worker
-  |- yt-dlp (YouTube URL ingestion)
-  |- faster-whisper
-  |- ai-nonymauz-cloud (optional)
-  |- FFmpeg
-  '- local job/output storage
+Browser -> potong.ai (Next.js) -> public Vercel Blob
+                              |
+                              v
+                     potong.ai-api (FastAPI)
+                       |- yt-dlp
+                       |- faster-whisper
+                       |- FFmpeg
+                       '- clips/status -> Vercel Blob
 ```
 
 The RM0 path keeps the expensive work on your own computer. No paid transcription or video API is required.
@@ -95,6 +93,7 @@ Web:
 
 ```env
 NEXT_PUBLIC_WORKER_URL=http://localhost:8787
+UPLOAD_ACCESS_KEY=
 ```
 
 Worker:
@@ -109,23 +108,30 @@ AI_API_KEY=
 CORS_ORIGINS=http://localhost:3000
 MAX_SOURCE_DURATION_SECONDS=14400
 YOUTUBE_COOKIES_BASE64=
+YOUTUBE_PLAYER_CLIENTS=
+YOUTUBE_PROXY_URL=
+BLOB_READ_WRITE_TOKEN=
 # Optional writable data path. Vercel automatically uses /tmp/potong-ai.
 POTONG_DATA_DIR=
 ```
 
 `MAX_SOURCE_DURATION_SECONDS` defaults to four hours. URL ingestion only accepts
 HTTPS links from known YouTube hosts, disables playlists and limits downloads to
-1080p to keep local processing practical.
+720p to keep Vercel `/tmp` usage practical.
 
 ### YouTube on cloud workers
 
-YouTube may block anonymous requests from data-centre IP addresses such as
-Vercel. Uploading a video file is the most reliable option. If URL ingestion is
-required, export a Netscape-format `cookies.txt` from a dedicated YouTube
-account, Base64-encode the complete file and store the result only as the
-`YOUTUBE_COOKIES_BASE64` worker secret. Never commit cookies or expose them as a
-`NEXT_PUBLIC_*` variable. Cookies can expire or be rotated, so this remains a
-best-effort integration rather than a guaranteed public download service.
+YouTube may challenge requests from data-centre IP addresses such as Vercel.
+Metadata inspection falls back to YouTube oEmbed, but downloading the video still
+requires yt-dlp to be accepted by YouTube. Export a Netscape-format `cookies.txt`
+from a dedicated YouTube account, Base64-encode the complete file and store the
+result only as the `YOUTUBE_COOKIES_BASE64` API secret. Never commit cookies,
+reuse a primary Google account, or expose this value as `NEXT_PUBLIC_*`.
+
+`YOUTUBE_PROXY_URL` is an optional standard HTTP/SOCKS proxy setting for a network
+you are authorised to use. Cookies and network routes can expire or be challenged;
+there is no legitimate code-only switch that can guarantee bypassing YouTube's
+anti-bot checks.
 
 ## Where to paste a YouTube URL
 
@@ -133,18 +139,25 @@ Open the app and keep **URL YouTube** selected. Paste the link into the large UR
 field, choose **Semak video** to verify its metadata, then select the clip settings
 and press **Analisis dan potong clip**.
 
-## Deployment
+## Deploy both projects on Vercel
 
-- Deploy the Next.js app to Vercel with `NEXT_PUBLIC_WORKER_URL` pointing to the worker.
-- Run the worker on a machine or CPU service with persistent storage, FFmpeg and enough
-  RAM for the selected Whisper model.
-- Add every deployed web origin to `CORS_ORIGINS`, separated by commas.
-- Keep `AI_API_KEY` on the worker only. Never expose it as a `NEXT_PUBLIC_*` variable.
+Use the same Git repository with two Vercel projects:
 
-The FastAPI health and metadata routes can run on Vercel. Vercel deployments use
-ephemeral `/tmp` storage, so completed jobs and output files are not persistent
-across function instances. The full transcription/rendering pipeline still needs
-durable object storage and a long-running job runner for reliable public use.
+1. `potong.ai`: repository root, Next.js framework.
+2. `potong.ai-api`: Root Directory `worker`, FastAPI framework.
+3. Create one **Public** Vercel Blob store and connect it to both projects. Vercel adds `BLOB_READ_WRITE_TOKEN` automatically.
+4. In `potong.ai`, set `NEXT_PUBLIC_WORKER_URL=https://potong-ai-api.vercel.app` and a private `UPLOAD_ACCESS_KEY` value.
+5. In `potong.ai-api`, set `CORS_ORIGINS=https://potong-ai.vercel.app`, `WHISPER_MODEL=tiny`, and the YouTube variables above.
+6. Redeploy both projects after changing environment variables.
+
+The browser uploads directly to Blob, avoiding Vercel's small Function request-body
+limit. The API downloads the Blob into `/tmp`, processes it, then uploads clips,
+subtitles, transcript, ZIP and final status back to Blob. `worker/vercel.json` sets
+the Hobby-compatible 300-second maximum duration.
+
+`UPLOAD_ACCESS_KEY` is intentionally required on the public site until proper user
+authentication/rate limiting is added; it prevents strangers from consuming the
+Blob quota. Give this code only to trusted users.
 
 ## Current limitation
 
@@ -152,4 +165,7 @@ The renderer currently uses a centered 9:16 crop. Face-aware reframing, multi-sp
 layouts and direct publishing require additional video/social integrations and are
 not presented as completed features.
 
-For a fully hosted public SaaS, the video worker needs a reachable CPU/GPU service. Vercel is suitable for the web app, not long FFmpeg/transcription jobs.
+Vercel Hobby still limits a function invocation to 300 seconds and `/tmp` to 500 MB.
+Shorter videos can run entirely on Vercel with the `tiny` Whisper model. Long videos
+that exceed the time limit still need a queue and long-running CPU/GPU worker; this
+cannot be removed by application code.

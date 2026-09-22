@@ -35,4 +35,5 @@ export interface SourceInfo {
   thumbnail: string;
   duration: number;
   webpage_url: string;
+  metadata_only?: boolean;
 }

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import uuid
 import zipfile
@@ -12,8 +13,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .clips import choose_clips
+from .blob_storage import blob_enabled, put_file, put_json, read_json
 from .render import render_clip, write_srt
-from .sources import download_youtube, inspect_youtube, validate_youtube_url
+from .sources import (
+    download_blob_upload,
+    download_youtube,
+    inspect_youtube,
+    validate_blob_upload_url,
+    validate_youtube_url,
+)
 from .transcribe import transcribe_video
 
 load_dotenv()
@@ -39,7 +47,7 @@ JOBS_DIR = DATA_DIR / "jobs"
 JOBS_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".mp4", ".mov", ".m4v", ".webm", ".mkv"}
-MAX_UPLOAD_BYTES = 8 * 1024 * 1024 * 1024
+MAX_UPLOAD_BYTES = 500 * 1024 * 1024
 
 app = FastAPI(title="potong.ai worker", version="0.1.0")
 
@@ -69,10 +77,18 @@ def _status_path(job_id: str) -> Path:
 
 
 def _read_job(job_id: str) -> dict[str, Any]:
-    path = _status_path(job_id)
-    if not path.exists():
+    if not re.fullmatch(r"[a-f0-9]{32}", job_id):
         raise HTTPException(status_code=404, detail="Job not found.")
-    return json.loads(path.read_text(encoding="utf-8"))
+    path = _status_path(job_id)
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        stored = read_json(f"jobs/{job_id}/status.json")
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Status job tidak dapat dibaca: {exc}") from exc
+    if stored is None:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    return stored
 
 
 def _write_job(job_id: str, **changes: Any) -> dict[str, Any]:
@@ -104,10 +120,19 @@ def _public_job(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _persist_job(job_id: str) -> None:
+    if not blob_enabled():
+        return
+    job = json.loads(_status_path(job_id).read_text(encoding="utf-8"))
+    put_json(f"jobs/{job_id}/status.json", job)
+
+
 def _process_job(
     job_id: str,
     source: Path | None,
     source_url: str,
+    upload_url: str,
+    upload_filename: str,
     clip_count: int,
     min_duration: int,
     max_duration: int,
@@ -120,6 +145,15 @@ def _process_job(
             _write_job(job_id, status="processing", progress=5, stage="Download video YouTube")
             source, metadata = download_youtube(source_url, _job_dir(job_id))
             _write_job(job_id, filename=metadata["title"], source_metadata=metadata)
+
+        if upload_url:
+            _write_job(job_id, status="processing", progress=8, stage="Ambil video upload")
+            extension = Path(upload_filename).suffix.lower()
+            source = download_blob_upload(
+                upload_url,
+                _job_dir(job_id) / ("source" + extension),
+                MAX_UPLOAD_BYTES,
+            )
 
         if source is None:
             raise RuntimeError("Sumber video tidak dijumpai.")
@@ -196,23 +230,54 @@ def _process_job(
                     Path(clip["subtitle_url"]).name,
                 )
 
+        transcript_url = f"/outputs/{job_id}/{transcript_path.name}"
+        bundle_url = f"/outputs/{job_id}/{bundle.name}"
+        if blob_enabled():
+            transcript_url = put_file(
+                f"jobs/{job_id}/{transcript_path.name}", transcript_path, "application/json"
+            )
+            bundle_url = put_file(
+                f"jobs/{job_id}/{bundle.name}", bundle, "application/zip"
+            )
+            for clip in clips:
+                clip_name = Path(clip["url"]).name
+                subtitle_name = Path(clip["subtitle_url"]).name
+                clip["url"] = put_file(
+                    f"jobs/{job_id}/{clip_name}", _job_dir(job_id) / clip_name, "video/mp4"
+                )
+                clip["subtitle_url"] = put_file(
+                    f"jobs/{job_id}/{subtitle_name}",
+                    _job_dir(job_id) / subtitle_name,
+                    "application/x-subrip",
+                )
+
         _write_job(
             job_id,
             status="completed",
             progress=100,
             stage="Siap",
             clips=clips,
-            transcript_url=f"/outputs/{job_id}/{transcript_path.name}",
-            bundle_url=f"/outputs/{job_id}/{bundle.name}",
+            transcript_url=transcript_url,
+            bundle_url=bundle_url,
             error=None,
         )
+        _persist_job(job_id)
     except Exception as exc:
         _write_job(job_id, status="failed", stage="Gagal", error=str(exc))
+        try:
+            _persist_job(job_id)
+        except Exception:
+            # Keep the original pipeline error visible to the caller.
+            pass
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict[str, str | bool]:
+    return {
+        "status": "ok",
+        "runtime": "vercel" if os.getenv("VERCEL") else "local",
+        "blob": blob_enabled(),
+    }
 
 
 @app.get("/api/source-info")
@@ -230,6 +295,8 @@ def create_job(
     background_tasks: BackgroundTasks,
     file: UploadFile | None = File(None),
     source_url: str = Form(""),
+    upload_url: str = Form(""),
+    upload_filename: str = Form(""),
     clip_count: int = Form(5),
     min_duration: int = Form(30),
     max_duration: int = Form(60),
@@ -238,18 +305,25 @@ def create_job(
     caption_style: str = Form("clean"),
 ) -> dict[str, Any]:
     source_url = source_url.strip()
-    if not file and not source_url:
+    upload_url = upload_url.strip()
+    source_count = sum((bool(file), bool(source_url), bool(upload_url)))
+    if source_count == 0:
         raise HTTPException(status_code=400, detail="Pilih fail video atau masukkan URL YouTube.")
-    if file and source_url:
+    if source_count > 1:
         raise HTTPException(status_code=400, detail="Hantar satu sumber video sahaja.")
 
-    extension = Path(file.filename or "").suffix.lower() if file else ""
+    extension = Path((file.filename if file else upload_filename) or "").suffix.lower()
 
-    if file and extension not in ALLOWED_EXTENSIONS:
+    if (file or upload_url) and extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Unsupported video format.")
     if source_url:
         try:
             source_url = validate_youtube_url(source_url)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if upload_url:
+        try:
+            upload_url = validate_blob_upload_url(upload_url)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
     if clip_count < 1 or clip_count > 12:
@@ -278,7 +352,7 @@ def create_job(
                 if written > MAX_UPLOAD_BYTES:
                     destination.close()
                     shutil.rmtree(folder, ignore_errors=True)
-                    raise HTTPException(status_code=413, detail="Video exceeds the 8 GB MVP limit.")
+                    raise HTTPException(status_code=413, detail="Video melebihi had 500 MB.")
                 destination.write(chunk)
 
     job = _write_job(
@@ -287,18 +361,19 @@ def create_job(
         status="queued",
         progress=2,
         stage="Dalam queue",
-        filename=(file.filename if file else source_url) or "Video YouTube",
+        filename=(file.filename if file else upload_filename or source_url) or "Video YouTube",
         source_type="youtube" if source_url else "upload",
         platform=platform,
         error=None,
         clips=[],
     )
 
-    background_tasks.add_task(
-        _process_job,
+    task_args = (
         job_id,
         source,
         source_url,
+        upload_url,
+        upload_filename,
         clip_count,
         min_duration,
         max_duration,
@@ -307,6 +382,17 @@ def create_job(
         caption_style,
     )
 
+    if os.getenv("VERCEL"):
+        if not blob_enabled():
+            shutil.rmtree(folder, ignore_errors=True)
+            raise HTTPException(
+                status_code=503,
+                detail="Sambungkan satu public Vercel Blob store kepada project API dahulu.",
+            )
+        _process_job(*task_args)
+        return _public_job(_read_job(job_id))
+
+    background_tasks.add_task(_process_job, *task_args)
     return _public_job(job)
 
 

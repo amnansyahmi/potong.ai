@@ -16,6 +16,7 @@ test("upload controls and completed result work end to end", async ({ page }) =>
   });
 
   await expect(page.getByText("demo.mp4")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Analisis dan potong clip" })).toBeDisabled();
   await page.getByRole("button", { name: "Tukar video" }).click();
   await expect(page.getByRole("button", { name: "Pilih video" })).toBeVisible();
 
@@ -26,6 +27,10 @@ test("upload controls and completed result work end to end", async ({ page }) =>
     mimeType: "video/mp4",
     buffer: Buffer.from("demo"),
   });
+
+  await page.getByRole("button", { name: "Selesai" }).click();
+  await expect(page.getByText("UPLOAD SELESAI")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Analisis dan potong clip" })).toBeEnabled();
 
   await page.getByLabel("Bilangan clip").last().fill("3");
   await page.getByLabel("Panjang clip").last().selectOption("20-40");
