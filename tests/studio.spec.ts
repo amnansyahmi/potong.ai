@@ -33,7 +33,7 @@ test("upload controls and completed result work end to end", async ({ page }) =>
   await page.getByRole("button", { name: "Analisis dan potong clip" }).click();
 
   await expect(page.getByRole("heading", { name: "Clip dah siap." })).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByText("Ramai silap dekat bahagian ini")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ramai silap dekat bahagian ini" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Download MP4" })).toHaveAttribute(
     "href",
     "http://localhost:8787/outputs/demo1234/clip-01.mp4",
