@@ -2,6 +2,7 @@ import json
 import os
 import re
 import shutil
+import traceback
 import uuid
 import zipfile
 from pathlib import Path
@@ -263,6 +264,7 @@ def _process_job(
         )
         _persist_job(job_id)
     except Exception as exc:
+        traceback.print_exc()
         _write_job(job_id, status="failed", stage="Gagal", error=str(exc))
         try:
             _persist_job(job_id)

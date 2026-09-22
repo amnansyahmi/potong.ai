@@ -55,7 +55,6 @@ export function Studio() {
   const [sourceLoading, setSourceLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [hosted, setHosted] = useState(false);
-  const [uploadAccessKey, setUploadAccessKey] = useState("");
   const [uploadConfirmed, setUploadConfirmed] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -162,11 +161,6 @@ export function Studio() {
       return;
     }
 
-    if (!uploadAccessKey.trim()) {
-      setError("Masukkan kod upload dahulu, kemudian tekan Selesai.");
-      return;
-    }
-
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-120);
     setUploading(true);
     setUploadProgress(0);
@@ -176,7 +170,6 @@ export function Studio() {
       const blob = await upload(`inputs/${Date.now()}-${safeName}`, file, {
         access: "public",
         handleUploadUrl: "/api/uploads",
-        clientPayload: JSON.stringify({ accessKey: uploadAccessKey.trim() }),
         multipart: file.size > 10 * 1024 * 1024,
         onUploadProgress: ({ percentage }) => setUploadProgress(percentage),
       });
@@ -379,12 +372,6 @@ export function Studio() {
                       <p className="fileLabel">{uploadConfirmed ? "UPLOAD SELESAI" : uploading ? `SEDANG UPLOAD ${Math.round(uploadProgress)}%` : "VIDEO DIPILIH"}</p>
                       <p className="fileName">{file.name}</p>
                       <p className="fileMeta">{formatBytes(file.size)}</p>
-                      {hosted && !uploadConfirmed && (
-                        <label className="uploadKeyField">
-                          <span>Kod upload</span>
-                          <input type="password" value={uploadAccessKey} disabled={uploading} autoComplete="off" onChange={(event) => setUploadAccessKey(event.target.value)} />
-                        </label>
-                      )}
                       {uploading && <div className="uploadTrack" aria-label={`Upload ${Math.round(uploadProgress)}%`}><span style={{ width: `${uploadProgress}%` }} /></div>}
                     </div>
                     <div className="fileActions">

@@ -21,20 +21,7 @@ export async function POST(request: Request): Promise<Response> {
     const result = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async (_pathname, clientPayload) => {
-        const expectedKey = process.env.UPLOAD_ACCESS_KEY?.trim();
-        let suppliedKey = "";
-
-        try {
-          suppliedKey = String(JSON.parse(clientPayload || "{}").accessKey || "").trim();
-        } catch {
-          // Invalid payloads are rejected below.
-        }
-
-        if (process.env.VERCEL && (!expectedKey || suppliedKey !== expectedKey)) {
-          throw new Error("Kod upload tidak sah atau UPLOAD_ACCESS_KEY belum ditetapkan.");
-        }
-
+      onBeforeGenerateToken: async () => {
         return {
           allowedContentTypes: [
             "video/mp4",

@@ -93,7 +93,6 @@ Web:
 
 ```env
 NEXT_PUBLIC_WORKER_URL=http://localhost:8787
-UPLOAD_ACCESS_KEY=
 ```
 
 Worker:
@@ -146,7 +145,7 @@ Use the same Git repository with two Vercel projects:
 1. `potong.ai`: repository root, Next.js framework.
 2. `potong.ai-api`: Root Directory `worker`, FastAPI framework.
 3. Create one **Public** Vercel Blob store and connect it to both projects. Vercel adds `BLOB_READ_WRITE_TOKEN` automatically.
-4. In `potong.ai`, set `NEXT_PUBLIC_WORKER_URL=https://potong-ai-api.vercel.app` and a private `UPLOAD_ACCESS_KEY` value.
+4. In `potong.ai`, set `NEXT_PUBLIC_WORKER_URL=https://potong-ai-api.vercel.app`.
 5. In `potong.ai-api`, set `CORS_ORIGINS=https://potong-ai.vercel.app`, `WHISPER_MODEL=tiny`, and the YouTube variables above.
 6. Redeploy both projects after changing environment variables.
 
@@ -155,9 +154,9 @@ limit. The API downloads the Blob into `/tmp`, processes it, then uploads clips,
 subtitles, transcript, ZIP and final status back to Blob. `worker/vercel.json` sets
 the Hobby-compatible 300-second maximum duration.
 
-`UPLOAD_ACCESS_KEY` is intentionally required on the public site until proper user
-authentication/rate limiting is added; it prevents strangers from consuming the
-Blob quota. Give this code only to trusted users.
+Uploads use short-lived Vercel Blob client tokens, are restricted to the site's own
+origin, accepted video content types, and a 500 MB maximum. Add account-based quotas
+or Vercel Firewall rate limiting before promoting the app to unrestricted public use.
 
 ## Current limitation
 
