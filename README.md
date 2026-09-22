@@ -108,6 +108,7 @@ AI_MODEL=auto
 AI_API_KEY=
 CORS_ORIGINS=http://localhost:3000
 MAX_SOURCE_DURATION_SECONDS=14400
+YOUTUBE_COOKIES_BASE64=
 # Optional writable data path. Vercel automatically uses /tmp/potong-ai.
 POTONG_DATA_DIR=
 ```
@@ -115,6 +116,16 @@ POTONG_DATA_DIR=
 `MAX_SOURCE_DURATION_SECONDS` defaults to four hours. URL ingestion only accepts
 HTTPS links from known YouTube hosts, disables playlists and limits downloads to
 1080p to keep local processing practical.
+
+### YouTube on cloud workers
+
+YouTube may block anonymous requests from data-centre IP addresses such as
+Vercel. Uploading a video file is the most reliable option. If URL ingestion is
+required, export a Netscape-format `cookies.txt` from a dedicated YouTube
+account, Base64-encode the complete file and store the result only as the
+`YOUTUBE_COOKIES_BASE64` worker secret. Never commit cookies or expose them as a
+`NEXT_PUBLIC_*` variable. Cookies can expire or be rotated, so this remains a
+best-effort integration rather than a guaranteed public download service.
 
 ## Where to paste a YouTube URL
 
