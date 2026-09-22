@@ -128,8 +128,8 @@ from a dedicated YouTube account, Base64-encode the complete file and store the
 result only as the `YOUTUBE_COOKIES_BASE64` API secret. Never commit cookies,
 reuse a primary Google account, or expose this value as `NEXT_PUBLIC_*`.
 
-`YOUTUBE_PROXY_URL` is an optional standard HTTP/SOCKS proxy setting for a network
-you are authorised to use. Cookies and network routes can expire or be challenged;
+`YOUTUBE_PROXY_URL` is an optional standard HTTP proxy setting for a network you
+are authorised to use. Cookies and network routes can expire or be challenged;
 there is no legitimate code-only switch that can guarantee bypassing YouTube's
 anti-bot checks.
 

@@ -1,0 +1,7 @@
+tests
+data
+.env
+.env.example
+Dockerfile
+__pycache__
+*.pyc
